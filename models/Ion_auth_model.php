@@ -1073,8 +1073,7 @@ class Ion_auth_model extends CI_Model
 	{
 		if ($this->config->item('track_login_attempts', 'ion_auth'))
 		{
-			$this->db->select('1', FALSE);
-			$this->db->where('login', $identity);
+			$this->db->select('1', FALSE)->group_start();
 			if ($this->config->item('track_login_ip_address', 'ion_auth'))
 			{
 				if (!isset($ip_address))
@@ -1082,8 +1081,17 @@ class Ion_auth_model extends CI_Model
 					$ip_address = $this->input->ip_address();
 				}
 				$this->db->where('ip_address', $ip_address);
+				
+				if (strlen($identity) > 0) 
+				{
+				       $this->db->or_where('login', $identity);
+				}
 			}
-			$this->db->where('time >', time() - $this->config->item('lockout_time', 'ion_auth'), FALSE);
+			else {
+				$this->db->where('login', $identity);
+			}
+
+			$this->db->group_end()->where('time >', time() - $this->config->item('lockout_time', 'ion_auth'), FALSE);
 			$qres = $this->db->get($this->tables['login_attempts']);
 			return $qres->num_rows();
 		}
@@ -1106,7 +1114,6 @@ class Ion_auth_model extends CI_Model
 		if ($this->config->item('track_login_attempts', 'ion_auth'))
 		{
 			$this->db->select('time');
-			$this->db->where('login', $identity);
 			if ($this->config->item('track_login_ip_address', 'ion_auth'))
 			{
 				if (!isset($ip_address))
@@ -1114,6 +1121,14 @@ class Ion_auth_model extends CI_Model
 					$ip_address = $this->input->ip_address();
 				}
 				$this->db->where('ip_address', $ip_address);
+				
+				if (strlen($identity) > 0) 
+				{
+				       $this->db->or_where('login', $identity);
+				}
+			}
+			else {
+				$this->db->where('login', $identity);
 			}
 			$this->db->order_by('id', 'desc');
 			$qres = $this->db->get($this->tables['login_attempts'], 1);
